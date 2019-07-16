@@ -1,0 +1,13 @@
+Imports:
+    dplyr,
+    tidyr,
+    exuber,
+    zoo, 
+    openxlsx,
+    fs,
+    ihpdr,
+    forcats,
+    here,
+    ihpdr
+Remotes:
+    kvasilopoulos/ihpdr

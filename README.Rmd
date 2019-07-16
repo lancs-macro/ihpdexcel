@@ -1,0 +1,35 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+# excel-iho
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of excel-iho provides exuberance excel-reports for the IHO. It sources an
+excel template from the `template` dir and store the output to `versions` dir. It 
+utilizes the api from `{ihpdr}`, so there is no need to fetch data manually.
+
+```{r warning=FALSE}
+source("create-excel.R")
+```
+
+# Download
+
+You can download the whole repo, doing the following.
+
+```{r}
+download.file("https://github.com/kvasilopoulos/excel-iho/archive/master.zip",
+              destfile = "excel-iho.zip")
+unzip(zipfile = "excel-iho.zip")
+unlink("excel-iho.zip", force = TRUE)
+```
