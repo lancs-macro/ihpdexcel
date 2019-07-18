@@ -1,5 +1,6 @@
 
-pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr", "forcats", "here")
+pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr", 
+          "forcats", "here", "devtools")
 
 miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 if (length(miss_pkgs)) {
@@ -171,7 +172,7 @@ writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AG", startRow = 4,
 
 writeData(wb, sheet = 3, xdata_cv, startCol = "B", startRow = 5, colNames = FALSE)
 writeData(wb, sheet = 3, xdata_price4, startCol = "B", startRow = 10, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income4, startCol = "D", startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_income4, startCol = "D", startRow = 10, colNames = FALSE)
 
 
 writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, 

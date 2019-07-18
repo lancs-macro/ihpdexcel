@@ -9,8 +9,8 @@
 
 The goal of excel-iho provides exuberance excel-reports for the IHO. It
 sources an excel template from the `template` dir and store the output
-to `versions` dir. It utilizes the api from `{ihpdr}`, so there is no
-need to fetch data manually.
+to `versions` dir. It utilizes the api from `{ihpdr}`, to download and
+tidy data, so there is no need to fetch data manually.
 
 ``` r
 source("create-excel.R")
@@ -19,7 +19,7 @@ source("create-excel.R")
 
 # Download
 
-You can download the whole repo, doing the following.
+You can download the whole repo, doing the following:
 
 ``` r
 download.file("https://github.com/kvasilopoulos/excel-iho/archive/master.zip",
