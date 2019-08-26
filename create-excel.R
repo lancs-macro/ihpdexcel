@@ -1,4 +1,7 @@
 
+
+# Package Management ------------------------------------------------------
+
 pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr", 
           "forcats", "here", "devtools")
 
@@ -6,7 +9,6 @@ miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 if (length(miss_pkgs)) {
   install.packages(miss_pkgs)
 }
-
 devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
 
 # Load libraries ----------------------------------------------------------
@@ -180,6 +182,8 @@ writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4,
           keepNA = TRUE, colNames = FALSE)
 writeData(wb, sheet = 3, xdata_income_seq4, startCol = "AG", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
+
+# Save Final Output -------------------------------------------------------
 
 suppressMessages(saveWorkbook(wb, here::here("versions", file_name), 
                             overwrite = TRUE))
