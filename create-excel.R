@@ -13,9 +13,10 @@ devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
 
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(exuber))
+suppressPackageStartupMessages(library(ihpdr))
 
 
-full_data <- ihpdr::download_raw()
+full_data <- ihpdr::ihpd_get()
 
 price <-
   full_data %>% 
