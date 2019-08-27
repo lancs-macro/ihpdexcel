@@ -20,7 +20,7 @@ do the following:
 
 ``` r
 # install.packages("usethis")
-usethis::use_course("kvasilopoulos/ihpdexcel")
+usethis::use_zip("kvasilopoulos/ihpdexcel", cleanup = TRUE)
 ```
 
 ## Create Excel
@@ -29,7 +29,6 @@ Then, source the `create-excel.R` file.
 
 ``` r
 source("create-excel.R")
-#> Saving `hpta1901.xlsx` to `versions/hpta1901.xlsx`
 ```
 
 At completion, it will print the name of the file and the relative path.

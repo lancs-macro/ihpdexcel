@@ -26,14 +26,14 @@ You can download the whole repo easily with the {usethis} package, just do the f
 
 ```{r eval = FALSE}
 # install.packages("usethis")
-usethis::use_course("kvasilopoulos/ihpdexcel")
+usethis::use_zip("kvasilopoulos/ihpdexcel", cleanup = TRUE)
 ```
 
 ## Create Excel
 
 Then, source the `create-excel.R` file.
 
-```{r warning=FALSE}
+```{r eval = FALSE, warning=FALSE}
 source("create-excel.R")
 ```
 
