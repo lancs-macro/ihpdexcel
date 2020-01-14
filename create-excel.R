@@ -8,7 +8,7 @@ miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 if (length(miss_pkgs)) {
   install.packages(miss_pkgs)
 }
-devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
+# devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
 
 # Load libraries ----------------------------------------------------------
 
@@ -92,14 +92,14 @@ xdata_price_seq1 <- augment(radf_price1) %>%
   spread(id, bsadf) %>% 
   right_join(idx,  by = "key") %>% 
   bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, target) 
+  select(Date = true_date, bsadf, all_of(target)) 
 
 xdata_price_seq4 <- augment(radf_price4) %>% 
   select(key, id, bsadf) %>% 
   spread(id, bsadf) %>% 
   right_join(idx,  by = "key") %>% 
   bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, target) 
+  select(Date = true_date, bsadf, all_of(target)) 
 
 
 # tidy income -------------------------------------------------------------
@@ -125,14 +125,14 @@ xdata_income_seq1 <- augment(radf_income1) %>%
   spread(id, bsadf) %>% 
   right_join(idx,  by = "key") %>% 
   bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, target) 
+  select(Date = true_date, bsadf, all_of(target)) 
 
 xdata_income_seq4 <- augment(radf_income4) %>% 
   select(key, id, bsadf) %>% 
   spread(id, bsadf) %>% 
   right_join(idx,  by = "key") %>% 
   bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, target) 
+  select(Date = true_date, bsadf, all_of(target)) 
 
 
 # start writing -----------------------------------------------------------
@@ -147,9 +147,6 @@ file_name <- paste0("hpta", vers, ".xlsx")
 if (fs::file_exists(here::here("versions", file_name))) {
   if (interactive()) {
     answer <- yesno::yesno2(sprintf("Whould you like to overwrite `%s`", file_name))
-    if (answer) {
-      fs::file_delete(here::here("versions", file_name))
-    }
   }
 }
 
@@ -161,9 +158,12 @@ options("openxlsx.numFmt" = "0.00")
 
 # Sheet 2: LAG=1 ----------------------------------------------------------
 
-writeData(wb, sheet = 2, xdata_cv, startCol = "B", startRow = 5, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_price1, startCol = "B", startRow = 10, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income1, startCol = "D", startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_cv, startCol = "B", 
+          startRow = 5, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_price1, startCol = "B", 
+          startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_income1, startCol = "D", 
+          startRow = 10, colNames = FALSE)
 
 writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
@@ -172,10 +172,12 @@ writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AG", startRow = 4,
 
 # Sheet 2: LAG=4 ----------------------------------------------------------
 
-writeData(wb, sheet = 3, xdata_cv, startCol = "B", startRow = 5, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_price4, startCol = "B", startRow = 10, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_income4, startCol = "D", startRow = 10, colNames = FALSE)
-
+writeData(wb, sheet = 3, xdata_cv, startCol = "B", 
+          startRow = 5, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_price4, startCol = "B", 
+          startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_income4, startCol = "D", 
+          startRow = 10, colNames = FALSE)
 
 writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
@@ -185,9 +187,8 @@ writeData(wb, sheet = 3, xdata_income_seq4, startCol = "AG", startRow = 4,
 # Save Final Output -------------------------------------------------------
 
 suppressMessages(saveWorkbook(wb, here::here("versions", file_name), 
-                            overwrite = TRUE))
+                              overwrite = TRUE))
 message(sprintf("Saving `%s` to `versions/%s`", file_name, file_name))
-
 
 
 
