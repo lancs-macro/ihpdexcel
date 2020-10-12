@@ -12,37 +12,45 @@ if (length(miss_pkgs)) {
 
 # Load libraries ----------------------------------------------------------
 
-suppressPackageStartupMessages(library(tidyverse))
-suppressPackageStartupMessages(library(exuber))
-suppressPackageStartupMessages(library(ihpdr))
-
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(exuber)
+  library(ihpdr)
+})
 
 full_data <- ihpdr::ihpd_get()
 
 price <-
   full_data %>% 
   select(Date, country, rhpi) %>% 
-  spread(country, rhpi)
+  spread(country, rhpi) %>% 
+  select(-starts_with("Aggregate"))
 
 income <-
   full_data %>% 
-  mutate(ratio = rhpi/rpdi) %>% 
+  mutate(ratio = hpi/pdi) %>% 
   select(Date, country, ratio) %>% 
-  spread(country, ratio)
+  spread(country, ratio) %>% 
+  select(-starts_with("Aggregate"))
 
 # Estimate ----------------------------------------------------------------
 
+minw <- psy_minw(price)
+
 suppressMessages({
-  
-radf_price1 <- radf(price, lag = 1)
-radf_price4 <- radf(price, lag = 4)
-radf_income1 <- radf(income, lag = 1)
-radf_income4 <- radf(income, lag = 4)
+radf_price1 <- radf(price, lag = 1, minw = minw)
+radf_price4 <- radf(price, lag = 4, minw = minw)
+radf_income1 <- radf(income, lag = 1, minw = minw)
+radf_income4 <- radf(income, lag = 4, minw = minw)
 
 })
 
 n <- nrow(price)
-cv <- crit[[n]]
+if(minw != psy_minw(price)){
+  cv <- radf_mc_cv(n, minw = 25)
+}else{
+  cv <- radf_crit[[n]]
+}
 
 # Custom ordering assing target -------------------------------------------
 
@@ -50,7 +58,7 @@ target <-
   c("Australia", "Belgium", "Canada", "Switzerland", "Germany", "Denmark", 
     "Spain", "Finland", "France", "UK", "Ireland", "Italy", "Japan", "S. Korea",
     "Luxembourg", "Netherlands", "Norway", "New Zealand", "Sweden", "US", 
-    "S. Africa", "Croatia", "Israel")
+    "S. Africa", "Croatia", "Israel", "Slovenia", "Colombia")
 
 # Tidy cv -----------------------------------------------------------------
 
@@ -62,50 +70,45 @@ xdata_cv <- tidy(cv) %>%
 idx <- index(radf_price1) %>% 
   zoo::as.yearqtr() %>% 
   format("%Y:Q%q") %>% 
-  enframe("key", "true_date")
+  enframe("key", "true_date") %>% 
+  bind_cols(index = index(radf_price1))
 
 cv_seq <- augment(cv) %>%
-  filter(sig == 0.95) %>% 
+  filter(sig == 95) %>% 
   right_join(idx,  by = "key") %>% 
   select(bsadf)
 
 # tidy price --------------------------------------------------------------
 
 xdata_price1 <- tidy(radf_price1) %>% 
-  slice(-1) %>% 
-  mutate(id = as.factor(id)) %>% 
-  mutate(id = forcats::fct_relevel(id, target)) %>% 
-  arrange(id) %>% 
   select(-adf,-id) %>% 
   set_names(c("SADF", "GSADF"))
 
 xdata_price4 <- tidy(radf_price4) %>% 
-  slice(-1) %>% 
-  mutate(id = as.factor(id)) %>% 
-  mutate(id = forcats::fct_relevel(id, target)) %>% 
-  arrange(id) %>% 
   select(-adf,-id) %>% 
   set_names(c("SADF", "GSADF"))
 
-xdata_price_seq1 <- augment(radf_price1) %>% 
-  select(key, id, bsadf) %>% 
-  spread(id, bsadf) %>% 
-  right_join(idx,  by = "key") %>% 
-  bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, all_of(target)) 
 
-xdata_price_seq4 <- augment(radf_price4) %>% 
-  select(key, id, bsadf) %>% 
-  spread(id, bsadf) %>% 
-  right_join(idx,  by = "key") %>% 
-  bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, all_of(target)) 
+xdata_price_seq1 <- augment_join(radf_price1, cv) %>% 
+  filter(name == "bsadf", sig == 95) %>% 
+  full_join(idx, by = "index") %>% 
+  select(true_date, id, tstat, crit) %>% 
+  arrange(true_date) %>% 
+  pivot_wider(names_from = id, values_from = tstat) %>% 
+  select(Date = true_date, crit, all_of(target))
+
+xdata_price_seq4 <-augment_join(radf_price4, cv) %>% 
+  filter(name == "bsadf", sig == 95) %>% 
+  full_join(idx, by = "index") %>% 
+  select(true_date, id, tstat, crit) %>% 
+  arrange(true_date) %>% 
+  pivot_wider(names_from = id, values_from = tstat) %>% 
+  select(Date = true_date, crit, all_of(target))
 
 
 # tidy income -------------------------------------------------------------
 
 xdata_income1 <- tidy(radf_income1) %>% 
-  slice(-1) %>% 
   mutate(id = as.factor(id)) %>% 
   mutate(id = forcats::fct_relevel(id, target)) %>% 
   arrange(id) %>% 
@@ -113,27 +116,44 @@ xdata_income1 <- tidy(radf_income1) %>%
   set_names(c("SADF", "GSADF"))
 
 xdata_income4 <- tidy(radf_income4) %>% 
-  slice(-1) %>% 
   mutate(id = as.factor(id)) %>% 
   mutate(id = forcats::fct_relevel(id, target)) %>% 
   arrange(id) %>% 
   select(-adf,-id) %>% 
   set_names(c("SADF", "GSADF"))
 
-xdata_income_seq1 <- augment(radf_income1) %>% 
-  select(key, id, bsadf) %>% 
-  spread(id, bsadf) %>% 
-  right_join(idx,  by = "key") %>% 
-  bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, all_of(target)) 
+# xdata_income_seq1 <- augment(radf_income1) %>% 
+#   select(key, id, bsadf) %>% 
+#   spread(id, bsadf) %>% 
+#   right_join(idx,  by = "key") %>% 
+#   bind_cols(cv_seq) %>% 
+#   arrange(key) %>% 
+#   select(Date = true_date, bsadf, all_of(target)) 
 
-xdata_income_seq4 <- augment(radf_income4) %>% 
-  select(key, id, bsadf) %>% 
-  spread(id, bsadf) %>% 
-  right_join(idx,  by = "key") %>% 
-  bind_cols(cv_seq) %>% 
-  select(Date = true_date, bsadf, all_of(target)) 
+# xdata_income_seq4 <-
+#   augment(radf_income4) %>% 
+#   select(key, id, bsadf) %>%
+#   spread(id, bsadf) %>% 
+#   right_join(idx,  by = "key") %>% 
+#   bind_cols(cv_seq) %>% 
+#   arrange(key) %>% 
+#   select(Date = true_date, bsadf, all_of(target))
 
+xdata_income_seq1 <-augment_join(radf_income1, cv) %>% 
+  filter(name == "bsadf", sig == 95) %>% 
+  full_join(idx, by = "index") %>% 
+  select(true_date, id, tstat, crit) %>% 
+  arrange(true_date) %>% 
+  pivot_wider(names_from = id, values_from = tstat) %>% 
+  select(Date = true_date, crit, all_of(target))
+  
+xdata_income_seq4 <-augment_join(radf_income4, cv) %>% 
+  filter(name == "bsadf", sig == 95) %>% 
+  full_join(idx, by = "index") %>% 
+  select(true_date, id, tstat, crit) %>% 
+  arrange(true_date) %>% 
+  pivot_wider(names_from = id, values_from = tstat) %>% 
+  select(Date = true_date, crit, all_of(target))
 
 # start writing -----------------------------------------------------------
 
@@ -150,9 +170,10 @@ if (fs::file_exists(here::here("versions", file_name))) {
   }
 }
 
+
 # load template -----------------------------------------------------------
 
-wb <- loadWorkbook(here::here("template", "full.xlsx"))
+wb <- loadWorkbook(here::here("template", "full_post2002.xlsx"))
 modifyBaseFont(wb, fontSize = 11, fontName = "Calibri")
 options("openxlsx.numFmt" = "0.00")
 
@@ -167,7 +188,7 @@ writeData(wb, sheet = 2, xdata_income1, startCol = "D",
 
 writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AG", startRow = 4, 
+writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AI", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
 
 # Sheet 2: LAG=4 ----------------------------------------------------------
@@ -181,19 +202,14 @@ writeData(wb, sheet = 3, xdata_income4, startCol = "D",
 
 writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_income_seq4, startCol = "AG", startRow = 4, 
+writeData(wb, sheet = 3, xdata_income_seq4, startCol = "AI", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
 
 # Save Final Output -------------------------------------------------------
 
-suppressMessages(saveWorkbook(wb, here::here("versions", file_name), 
-                              overwrite = TRUE))
+suppressMessages(saveWorkbook(wb, here::here("versions", file_name), overwrite = TRUE))
 message(sprintf("Saving `%s` to `versions/%s`", file_name, file_name))
 
 
-
-  
-
-  
 
 
