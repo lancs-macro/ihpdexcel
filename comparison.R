@@ -1,28 +1,6 @@
 source("functions.R")
 
-hpta1903 <- ihpd_get_bsadf_local("versions/hpta1903.xlsx")
-hpta1904 <- ihpd_get_bsadf_local("versions/hpta1904.xlsx")
-hpta2001 <- ihpd_get_bsadf_local("versions/hpta2001.xlsx")
-
-
-hpta1903 <- hpta1903 %>% 
-  filter(type == "ratio", lag == 4) %>% 
-  select(-crit) %>% 
-  drop_na() %>% 
-  rename("hpta1903" = value)
-hpta1904 <- hpta1904 %>% 
-  filter(type == "ratio", lag == 4) %>% 
-  select(-crit) %>% 
-  drop_na() %>% 
-  rename("hpta1904" = value)
-hpta2001 <- hpta2001 %>% 
-  filter(type == "ratio", lag == 4) %>% 
-  select(-crit) %>% 
-  drop_na() %>% 
-  rename("hpta2001" = value)
-
-
-compare_versions <- function(versions = c("hpta1903.xlsx", "hpta1904.xlsx", "hpta2001.xlsx"), 
+compare_versions <- function(versions = c("hpta2001.xlsx", "hpta2002.xlsx"), 
                              lags = 1, types = "rhpi") {
   suppressWarnings({
     vrs <- gsub(".xlsx", "", versions)
@@ -45,37 +23,53 @@ mse <- function(e1, e2) {
   mean(ds)
 }
 
-compare_versions(types = "ratio") %>% 
+compare <- function(ver1, ver2) {
+  
+  v1 <- enquo(ver1) 
+  v2 <- enquo(ver2)
+  vs1 <- rlang::as_name(v1)
+  vs2 <- rlang::as_name(v2)
+  
+  i_lags <- c(1,4)
+  j_types <- c("rhpi", "ratio")
+  
+  for(i in i_lags) {
+    for(j in j_types) {
+      compare_versions(paste0(c(vs1, vs2), ".xlsx"), lags = i, types = j) %>% 
+        drop_na() %>% 
+        group_by(country) %>% 
+        summarize(
+          mse = mse(!!v1,!!v2)
+        ) %>% 
+        ggplot(aes(country, mse)) +
+        geom_col(width = 0.8) +
+        geom_hline(yintercept = 0.4, linetype = "dashed", color = "red") +
+        theme_bw() +
+        theme(
+          axis.text.x = element_text(angle = 90)
+        )
+      ggsave(glue("comparisons/hpta2002/{j}-lag{i}.png"))
+    }
+  }
+}
+
+compare(hpta2001, hpta2002)
+
+
+compare_versions() %>% 
   drop_na() %>% 
   group_by(country) %>% 
-  summarise(
-    mse_1904_1903 = mse(hpta1903, hpta1904), 
-    mse_2001_1904 = mse(hpta2001, hpta1904)
+  summarize(
+    mse = mse(hpta2001,hpta2002)
   ) %>% 
-  pivot_longer(cols = starts_with("mse")) %>% 
-  ggplot(aes(country, value, fill = name)) +
-  geom_col(width = 1)
-  
-
-list(hpta1903, hpta1904, hpta2001) %>% 
-  reduce(full_join, by = c("Date", "country", "type", "lag")) %>% 
-  select(-type, -lag) %>% 
-  mutate(diff_1904_1903 = hpta1904 - hpta1903, diff_2001_1904 = hpta2001 - hpta1904) %>% 
-  # mutate(mse_1904_1903 = mean((hpta1904 - hpta1903)^2), mse_2001_1904 = mean((hpta2001 - hpta1904)^2)) %>% 
-  pivot_longer(cols = starts_with("hpta"), names_to = "version", values_to = "hpta") %>%
-  pivot_longer(cols = starts_with("diff"), names_to = "diff_version", values_to = "diff") %>%
-  # pivot_longer(cols = starts_with("mse"), names_to = "mse_version", values_to = "mse") %>%
-  # ggplot(aes(Date, hpta, col = version)) +
-  ggplot(aes(Date, diff, col = diff_version)) +
-  # ggplot(aes(Date, mse, col = diff_version)) +
-  geom_line() +
-  facet_wrap(~country, scales = "free_y") +
+  ggplot(aes(country, mse)) +
+  geom_col(width = 0.8) +
+  geom_hline(yintercept = 0.4, linetype = "dashed", color = "red") +
   theme_bw() +
   theme(
-    strip.background = element_blank(),
-    axis.title = element_blank()
-  ) +
-  ggtitle("Price-to-Income Ratio (lag = 1)")
+    axis.text.x = element_text(angle = 90)
+  )
+
+ggsave("comparisons/hpta2002/rhpi.png", width = 10, height = 4)  
 
 
-ggsave("price-to-income-diff.png")
