@@ -4,7 +4,6 @@
 # ihpdexcel
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The goal of {ihpdexcel} is to create excel-reports for the International

@@ -38,11 +38,10 @@ income <-
 minw <- psy_minw(price)
 
 suppressMessages({
-radf_price1 <- radf(price, lag = 1, minw = minw)
-radf_price4 <- radf(price, lag = 4, minw = minw)
-radf_income1 <- radf(income, lag = 1, minw = minw)
-radf_income4 <- radf(income, lag = 4, minw = minw)
-
+  radf_price1 <- radf(price, lag = 1, minw = minw)
+  radf_price4 <- radf(price, lag = 4, minw = minw)
+  radf_income1 <- radf(income, lag = 1, minw = minw)
+  radf_income4 <- radf(income, lag = 4, minw = minw)
 })
 
 n <- nrow(price)
@@ -159,9 +158,13 @@ xdata_income_seq4 <-augment_join(radf_income4, cv) %>%
 
 library(openxlsx)
 
-vers <- pull(price, Date)[n] %>% 
-  zoo::as.yearqtr() %>% 
-  format("%y0%q")
+# vers <- pull(price, Date)[n] %>% 
+#   zoo::as.yearqtr() %>% 
+#   format("%y0%q")
+
+all_versions <- ihpdr::ihpd_versions()
+
+vers <- all_versions[1]
 
 file_name <- paste0("hpta", vers, ".xlsx")
 if (fs::file_exists(here::here("versions", file_name))) {
@@ -211,5 +214,15 @@ suppressMessages(saveWorkbook(wb, here::here("versions", file_name), overwrite =
 message(sprintf("Saving `%s` to `versions/%s`", file_name, file_name))
 
 
+# comparison -------------------------------------------------------------
+
+source("functions.R")
+
+# Write the names of the versions you want to compare
+
+old_version <- paste0("hpta", all_versions[2])
+new_version <- paste0("hpta", vers)
+
+compare(v1 = old_version, v2 = new_version)
 
 

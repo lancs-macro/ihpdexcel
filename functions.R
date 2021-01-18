@@ -45,3 +45,59 @@ ihpd_get_bsadf_local <- function(tf = NULL) {
     select(Date, country, type, lag, value, crit) 
   
 }
+
+
+# comparison --------------------------------------------------------------
+
+compare_versions <- function(versions = c(old_version, new_version), #c("hpta2002.xlsx", "hpta2003.xlsx"), 
+                             lags = 1, types = "rhpi") {
+  suppressWarnings({
+    vrs <- gsub(".xlsx", "", versions)
+    hpta <- list()
+    for(i in 1:length(versions)) {
+      hpta[[i]] <- ihpd_get_bsadf_local(paste0("versions/", versions[i])) %>%
+        filter(type == types, lag == lags) %>%
+        select(-crit) %>%
+        drop_na() %>% 
+        set_names(c("Date", "country", "type", "lag", vrs[i]))
+    }
+    hpta %>% 
+      reduce(full_join, by = c("Date", "country", "type", "lag")) %>% 
+      select(-type, -lag) 
+  })
+}
+
+mse <- function(e1, e2) {
+  ds <- (e1 - e2)^2
+  mean(ds)
+}
+
+compare <- function(v1, v2) {
+ 
+  i_lags <- c(1,4)
+  j_types <- c("rhpi", "ratio")
+  
+  dir_name <- glue("comparisons/{v2}")
+  fs::dir_create(dir_name)
+  message(glue("Creating {dir_name} directory."))
+  
+  for(i in i_lags) {
+    for(j in j_types) {
+      compare_versions(paste0(c(v1, v2), ".xlsx"), lags = i, types = j) %>% 
+        drop_na() %>% 
+        group_by(country) %>% 
+        summarize(
+          mse = mse(!!rlang::sym(v1),!!rlang::sym(v2)),
+          .groups = "drop"
+        ) %>% 
+        ggplot(aes(country, mse)) +
+        geom_col(width = 0.8) +
+        geom_hline(yintercept = 0.4, linetype = "dashed", color = "red") +
+        theme_bw() +
+        theme(
+          axis.text.x = element_text(angle = 90)
+        )
+      ggsave(glue("comparisons/{v2}/{j}-lag{i}.png"))
+    }
+  }
+}

@@ -33,7 +33,7 @@ usethis::use_zip("kvasilopoulos/ihpdexcel", cleanup = TRUE)
 
 Then, source the `create-excel.R` file.
 
-```{r eval = FALSE, warning=FALSE}
+```{r eval=FALSE, warning=FALSE}
 source("create-excel.R")
 ```
 
