@@ -28,7 +28,7 @@ price <-
 
 income <-
   full_data %>% 
-  mutate(ratio = hpi/pdi) %>% 
+  mutate(ratio = rhpi/rpdi) %>% 
   select(Date, country, ratio) %>% 
   spread(country, ratio) %>% 
   select(-starts_with("Aggregate"))
@@ -89,7 +89,7 @@ xdata_price4 <- tidy(radf_price4) %>%
 
 
 xdata_price_seq1 <- augment_join(radf_price1, cv) %>% 
-  filter(name == "bsadf", sig == 95) %>% 
+  filter(stat == "bsadf", sig == 95) %>% 
   full_join(idx, by = "index") %>% 
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
@@ -97,7 +97,7 @@ xdata_price_seq1 <- augment_join(radf_price1, cv) %>%
   select(Date = true_date, crit, all_of(target))
 
 xdata_price_seq4 <-augment_join(radf_price4, cv) %>% 
-  filter(name == "bsadf", sig == 95) %>% 
+  filter(stat == "bsadf", sig == 95) %>% 
   full_join(idx, by = "index") %>% 
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
@@ -139,7 +139,7 @@ xdata_income4 <- tidy(radf_income4) %>%
 #   select(Date = true_date, bsadf, all_of(target))
 
 xdata_income_seq1 <-augment_join(radf_income1, cv) %>% 
-  filter(name == "bsadf", sig == 95) %>% 
+  filter(stat == "bsadf", sig == 95) %>% 
   full_join(idx, by = "index") %>% 
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
@@ -147,7 +147,7 @@ xdata_income_seq1 <-augment_join(radf_income1, cv) %>%
   select(Date = true_date, crit, all_of(target))
   
 xdata_income_seq4 <-augment_join(radf_income4, cv) %>% 
-  filter(name == "bsadf", sig == 95) %>% 
+  filter(stat == "bsadf", sig == 95) %>% 
   full_join(idx, by = "index") %>% 
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
@@ -158,12 +158,11 @@ xdata_income_seq4 <-augment_join(radf_income4, cv) %>%
 
 library(openxlsx)
 
-# vers <- pull(price, Date)[n] %>% 
-#   zoo::as.yearqtr() %>% 
+# vers <- pull(price, Date)[n] %>%
+#   zoo::as.yearqtr() %>%
 #   format("%y0%q")
 
 all_versions <- ihpdr::ihpd_versions()
-
 vers <- all_versions[1]
 
 file_name <- paste0("hpta", vers, ".xlsx")
@@ -173,6 +172,10 @@ if (fs::file_exists(here::here("versions", file_name))) {
   }
 }
 
+
+# TODO automating filling columns without template - cellranger
+cellranger::num_to_letter(20)
+cellranger::letter_to_num("G")
 
 # load template -----------------------------------------------------------
 
@@ -191,7 +194,7 @@ writeData(wb, sheet = 2, xdata_income1, startCol = "D",
 
 writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AI", startRow = 4, 
+writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AI", startRow = 4, # TODO this depends on the number
           keepNA = TRUE, colNames = FALSE)
 
 # Sheet 2: LAG=4 ----------------------------------------------------------
