@@ -94,7 +94,8 @@ xdata_price_seq1 <- augment_join(radf_price1, cv) %>%
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
   pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target))
+  select(Date = true_date, crit, all_of(target)) %>% 
+  drop_na(Date)
 
 xdata_price_seq4 <-augment_join(radf_price4, cv) %>% 
   filter(stat == "bsadf", sig == 95) %>% 
@@ -102,7 +103,8 @@ xdata_price_seq4 <-augment_join(radf_price4, cv) %>%
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
   pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target))
+  select(Date = true_date, crit, all_of(target)) %>% 
+  drop_na(Date)
 
 
 # tidy income -------------------------------------------------------------
@@ -138,13 +140,15 @@ xdata_income4 <- tidy(radf_income4) %>%
 #   arrange(key) %>% 
 #   select(Date = true_date, bsadf, all_of(target))
 
-xdata_income_seq1 <-augment_join(radf_income1, cv) %>% 
+
+xdata_income_seq1 <- augment_join(radf_income1, cv) %>% 
   filter(stat == "bsadf", sig == 95) %>% 
   full_join(idx, by = "index") %>% 
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
   pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target))
+  select(Date = true_date, crit, all_of(target)) %>% 
+  drop_na(Date)
   
 xdata_income_seq4 <-augment_join(radf_income4, cv) %>% 
   filter(stat == "bsadf", sig == 95) %>% 
@@ -152,7 +156,8 @@ xdata_income_seq4 <-augment_join(radf_income4, cv) %>%
   select(true_date, id, tstat, crit) %>% 
   arrange(true_date) %>% 
   pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target))
+  select(Date = true_date, crit, all_of(target)) %>% 
+  drop_na(Date)
 
 # start writing -----------------------------------------------------------
 
