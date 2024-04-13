@@ -8,6 +8,7 @@ miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
 if (length(miss_pkgs)) {
   install.packages(miss_pkgs)
 }
+remotes::install_github("kvasilopoulos/ihpdr")
 # devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
 
 # Load libraries ----------------------------------------------------------
@@ -57,7 +58,7 @@ target <-
   c("Australia", "Belgium", "Canada", "Switzerland", "Germany", "Denmark", 
     "Spain", "Finland", "France", "UK", "Ireland", "Italy", "Japan", "S. Korea",
     "Luxembourg", "Netherlands", "Norway", "New Zealand", "Sweden", "US", 
-    "S. Africa", "Croatia", "Israel", "Slovenia", "Colombia")
+    "S. Africa", "Croatia", "Israel", "Slovenia", "Colombia", "Portugal")
 
 # Tidy cv -----------------------------------------------------------------
 
@@ -177,14 +178,12 @@ if (fs::file_exists(here::here("versions", file_name))) {
   }
 }
 
-
-# TODO automating filling columns without template - cellranger
-cellranger::num_to_letter(20)
-cellranger::letter_to_num("G")
+second_table_num <- cellranger::letter_to_num("G") + ncol(xdata_price_seq1) + 1
+second_table_start <- cellranger::num_to_letter(second_table_num)
 
 # load template -----------------------------------------------------------
 
-wb <- loadWorkbook(here::here("template", "full_post2002.xlsx"))
+wb <- loadWorkbook(here::here("template", "full_post2304.xlsx"))
 modifyBaseFont(wb, fontSize = 11, fontName = "Calibri")
 options("openxlsx.numFmt" = "0.00")
 
@@ -199,8 +198,8 @@ writeData(wb, sheet = 2, xdata_income1, startCol = "D",
 
 writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income_seq1, startCol = "AI", startRow = 4, # TODO this depends on the number
-          keepNA = TRUE, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_income_seq1, startCol = second_table_start, 
+          startRow = 4,  keepNA = TRUE, colNames = FALSE)
 
 # Sheet 2: LAG=4 ----------------------------------------------------------
 
@@ -213,8 +212,8 @@ writeData(wb, sheet = 3, xdata_income4, startCol = "D",
 
 writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, 
           keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_income_seq4, startCol = "AI", startRow = 4, 
-          keepNA = TRUE, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_income_seq4, startCol = second_table_start, 
+          startRow = 4,  keepNA = TRUE, colNames = FALSE)
 
 # Save Final Output -------------------------------------------------------
 
