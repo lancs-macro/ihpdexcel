@@ -19,7 +19,8 @@ suppressPackageStartupMessages({
   library(ihpdr)
 })
 
-full_data <- ihpdr::ihpd_get()
+full_data <- ihpdr::ihpd_get() %>% 
+  mutate_at(vars(-Date, -country), as.numeric)
 
 price <-
   full_data %>% 
