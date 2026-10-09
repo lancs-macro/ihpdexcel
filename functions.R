@@ -58,7 +58,7 @@ compare_versions <- function(
   suppressWarnings({
     vrs <- gsub(".xlsx", "", versions)
     hpta <- list()
-    for (i in 1:length(versions)) {
+    for (i in seq_along(versions)) {
       hpta[[i]] <- ihpd_get_bsadf_local(paste0("versions/", versions[i])) %>%
         filter(type == types, lag == lags) %>%
         select(-crit) %>%
