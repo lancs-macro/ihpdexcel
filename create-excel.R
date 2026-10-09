@@ -1,7 +1,7 @@
 
 # Package Management ------------------------------------------------------
 
-pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr", 
+pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr",
           "forcats", "here", "devtools")
 
 miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
@@ -19,7 +19,28 @@ suppressPackageStartupMessages({
   library(ihpdr)
 })
 
-full_data <- ihpdr::ihpd_get() %>% 
+# "remote" queries the ihpdr package's online source directly; "local" uses
+# the newest hp*.xlsx dropped in data/ instead, for when a release file
+# arrives before ihpdr's online source is updated.
+DOWNLOAD_TYPE <- "remote"
+
+ihpd_get_local <- function(path) {
+  list(
+    ihpdr:::format_excel_raw(path, 2, "hpi"),
+    ihpdr:::format_excel_raw(path, 3, "rhpi"),
+    ihpdr:::format_excel_raw(path, 4, "pdi"),
+    ihpdr:::format_excel_raw(path, 5, "rpdi")) %>%
+    reduce(full_join, by = c("Date", "country")) %>%
+    drop_na()
+}
+
+if (DOWNLOAD_TYPE == "local") {
+  local_file <- fs::dir_ls("data", regexp = "hp[0-9]{4}\\.xlsx$") %>% sort() %>% tail(1)
+  full_data <- ihpd_get_local(local_file)
+} else {
+  full_data <- ihpdr::ihpd_get()
+}
+full_data <- full_data %>%
   mutate_at(vars(-Date, -country), as.numeric)
 
 price <-
@@ -47,11 +68,9 @@ suppressMessages({
 })
 
 n <- nrow(price)
-if(minw != psy_minw(price)){
-  cv <- radf_mc_cv(n, minw = 25)
-}else{
-  cv <- radf_crit[[n]]
-}
+# exuber 2.0.0 removed the bundled `radf_crit` lookup table (lag-0, n<=600);
+# radf_mc_cv() is its documented offline replacement (own Monte Carlo sim)
+cv <- radf_mc_cv(n, minw = minw, seed = 42)
 
 # Custom ordering assing target -------------------------------------------
 
@@ -165,12 +184,17 @@ xdata_income_seq4 <-augment_join(radf_income4, cv) %>%
 
 library(openxlsx)
 
-# vers <- pull(price, Date)[n] %>%
-#   zoo::as.yearqtr() %>%
-#   format("%y0%q")
+# ihpdr::ihpd_versions() was removed upstream; derive the release tag
+# ("2602" etc.) from the data's own last date instead.
+vers <- pull(price, Date)[n] %>%
+  zoo::as.yearqtr() %>%
+  format("%y0%q")
 
-all_versions <- ihpdr::ihpd_versions()
-vers <- all_versions[1]
+old_version <- fs::dir_ls("versions", regexp = "^versions/hpta[0-9]{4}\\.xlsx$") %>%
+  fs::path_file() %>%
+  gsub("\\.xlsx$", "", .) %>%
+  sort() %>%
+  tail(1)
 
 file_name <- paste0("hpta", vers, ".xlsx")
 if (fs::file_exists(here::here("versions", file_name))) {
@@ -226,9 +250,6 @@ message(sprintf("Saving `%s` to `versions/%s`", file_name, file_name))
 
 source("functions.R")
 
-# Write the names of the versions you want to compare
-
-old_version <- paste0("hpta", all_versions[2])
 new_version <- paste0("hpta", vers)
 
 compare(v1 = old_version, v2 = new_version)
