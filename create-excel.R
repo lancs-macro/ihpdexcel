@@ -1,15 +1,5 @@
 
-# Package Management ------------------------------------------------------
-
-pkgs <- c("dplyr", "tidyr", "exuber", "zoo", "openxlsx", "fs", "ihpdr",
-          "forcats", "here", "devtools")
-
-miss_pkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])]
-if (length(miss_pkgs)) {
-  install.packages(miss_pkgs)
-}
-remotes::install_github("kvasilopoulos/ihpdr")
-# devtools::install_github("kvasilopoulos/ihpdr", quiet = TRUE)
+# Dependencies are managed by rv (rproject.toml) - run `rv sync` to install.
 
 # Load libraries ----------------------------------------------------------
 
