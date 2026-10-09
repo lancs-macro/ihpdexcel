@@ -1,4 +1,3 @@
-
 # Dependencies are managed by rv (rproject.toml) - run `rv sync` to install.
 
 # Load libraries ----------------------------------------------------------
@@ -19,7 +18,8 @@ ihpd_get_local <- function(path) {
     ihpdr:::format_excel_raw(path, 2, "hpi"),
     ihpdr:::format_excel_raw(path, 3, "rhpi"),
     ihpdr:::format_excel_raw(path, 4, "pdi"),
-    ihpdr:::format_excel_raw(path, 5, "rpdi")) %>%
+    ihpdr:::format_excel_raw(path, 5, "rpdi")
+  ) %>%
     reduce(full_join, by = c("Date", "country")) %>%
     drop_na()
 }
@@ -34,16 +34,16 @@ full_data <- full_data %>%
   mutate_at(vars(-Date, -country), as.numeric)
 
 price <-
-  full_data %>% 
-  select(Date, country, rhpi) %>% 
-  spread(country, rhpi) %>% 
+  full_data %>%
+  select(Date, country, rhpi) %>%
+  spread(country, rhpi) %>%
   select(-starts_with("Aggregate"))
 
 income <-
-  full_data %>% 
-  mutate(ratio = rhpi/rpdi) %>% 
-  select(Date, country, ratio) %>% 
-  spread(country, ratio) %>% 
+  full_data %>%
+  mutate(ratio = rhpi / rpdi) %>%
+  select(Date, country, ratio) %>%
+  spread(country, ratio) %>%
   select(-starts_with("Aggregate"))
 
 # Estimate ----------------------------------------------------------------
@@ -64,110 +64,133 @@ cv <- radf_mc_cv(n, minw = minw, seed = 42)
 
 # Custom ordering assing target -------------------------------------------
 
-target <- 
-  c("Australia", "Belgium", "Canada", "Switzerland", "Germany", "Denmark", 
-    "Spain", "Finland", "France", "UK", "Ireland", "Italy", "Japan", "S. Korea",
-    "Luxembourg", "Netherlands", "Norway", "New Zealand", "Sweden", "US", 
-    "S. Africa", "Croatia", "Israel", "Slovenia", "Colombia", "Portugal")
+target <-
+  c(
+    "Australia",
+    "Belgium",
+    "Canada",
+    "Switzerland",
+    "Germany",
+    "Denmark",
+    "Spain",
+    "Finland",
+    "France",
+    "UK",
+    "Ireland",
+    "Italy",
+    "Japan",
+    "S. Korea",
+    "Luxembourg",
+    "Netherlands",
+    "Norway",
+    "New Zealand",
+    "Sweden",
+    "US",
+    "S. Africa",
+    "Croatia",
+    "Israel",
+    "Slovenia",
+    "Colombia",
+    "Portugal"
+  )
 
 # Tidy cv -----------------------------------------------------------------
 
-xdata_cv <- tidy(cv) %>% 
-  select(-sig, -adf) %>% 
-  # mutate(sig = paste0(sig, "%")) %>% 
-  set_names(c("SADF", "GSADF")) 
+xdata_cv <- tidy(cv) %>%
+  select(-sig, -adf) %>%
+  # mutate(sig = paste0(sig, "%")) %>%
+  set_names(c("SADF", "GSADF"))
 
-idx <- index(radf_price1) %>% 
-  zoo::as.yearqtr() %>% 
-  format("%Y:Q%q") %>% 
-  enframe("key", "true_date") %>% 
+idx <- index(radf_price1) %>%
+  zoo::as.yearqtr() %>%
+  format("%Y:Q%q") %>%
+  enframe("key", "true_date") %>%
   bind_cols(index = index(radf_price1))
 
 cv_seq <- augment(cv) %>%
-  filter(sig == 95) %>% 
-  right_join(idx,  by = "key") %>% 
+  filter(sig == 95) %>%
+  right_join(idx, by = "key") %>%
   select(bsadf)
 
 # tidy price --------------------------------------------------------------
 
-xdata_price1 <- tidy(radf_price1) %>% 
-  select(-adf,-id) %>% 
+xdata_price1 <- tidy(radf_price1) %>%
+  select(-adf, -id) %>%
   set_names(c("SADF", "GSADF"))
 
-xdata_price4 <- tidy(radf_price4) %>% 
-  select(-adf,-id) %>% 
+xdata_price4 <- tidy(radf_price4) %>%
+  select(-adf, -id) %>%
   set_names(c("SADF", "GSADF"))
 
 
-xdata_price_seq1 <- augment_join(radf_price1, cv) %>% 
-  filter(stat == "bsadf", sig == 95) %>% 
-  full_join(idx, by = "index") %>% 
-  select(true_date, id, tstat, crit) %>% 
-  arrange(true_date) %>% 
-  pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target)) %>% 
+xdata_price_seq1 <- augment_join(radf_price1, cv) %>%
+  filter(stat == "bsadf", sig == 95) %>%
+  full_join(idx, by = "index") %>%
+  select(true_date, id, tstat, crit) %>%
+  arrange(true_date) %>%
+  pivot_wider(names_from = id, values_from = tstat) %>%
+  select(Date = true_date, crit, all_of(target)) %>%
   drop_na(Date)
 
-xdata_price_seq4 <-augment_join(radf_price4, cv) %>% 
-  filter(stat == "bsadf", sig == 95) %>% 
-  full_join(idx, by = "index") %>% 
-  select(true_date, id, tstat, crit) %>% 
-  arrange(true_date) %>% 
-  pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target)) %>% 
+xdata_price_seq4 <- augment_join(radf_price4, cv) %>%
+  filter(stat == "bsadf", sig == 95) %>%
+  full_join(idx, by = "index") %>%
+  select(true_date, id, tstat, crit) %>%
+  arrange(true_date) %>%
+  pivot_wider(names_from = id, values_from = tstat) %>%
+  select(Date = true_date, crit, all_of(target)) %>%
   drop_na(Date)
 
 
 # tidy income -------------------------------------------------------------
 
-xdata_income1 <- tidy(radf_income1) %>% 
-  mutate(id = as.factor(id)) %>% 
-  mutate(id = forcats::fct_relevel(id, target)) %>% 
-  arrange(id) %>% 
-  select(-adf,-id) %>% 
+xdata_income1 <- tidy(radf_income1) %>%
+  mutate(id = as.factor(id)) %>%
+  mutate(id = forcats::fct_relevel(id, target)) %>%
+  arrange(id) %>%
+  select(-adf, -id) %>%
   set_names(c("SADF", "GSADF"))
 
-xdata_income4 <- tidy(radf_income4) %>% 
-  mutate(id = as.factor(id)) %>% 
-  mutate(id = forcats::fct_relevel(id, target)) %>% 
-  arrange(id) %>% 
-  select(-adf,-id) %>% 
+xdata_income4 <- tidy(radf_income4) %>%
+  mutate(id = as.factor(id)) %>%
+  mutate(id = forcats::fct_relevel(id, target)) %>%
+  arrange(id) %>%
+  select(-adf, -id) %>%
   set_names(c("SADF", "GSADF"))
 
-# xdata_income_seq1 <- augment(radf_income1) %>% 
-#   select(key, id, bsadf) %>% 
-#   spread(id, bsadf) %>% 
-#   right_join(idx,  by = "key") %>% 
-#   bind_cols(cv_seq) %>% 
-#   arrange(key) %>% 
-#   select(Date = true_date, bsadf, all_of(target)) 
-
-# xdata_income_seq4 <-
-#   augment(radf_income4) %>% 
+# xdata_income_seq1 <- augment(radf_income1) %>%
 #   select(key, id, bsadf) %>%
-#   spread(id, bsadf) %>% 
-#   right_join(idx,  by = "key") %>% 
-#   bind_cols(cv_seq) %>% 
-#   arrange(key) %>% 
+#   spread(id, bsadf) %>%
+#   right_join(idx,  by = "key") %>%
+#   bind_cols(cv_seq) %>%
+#   arrange(key) %>%
 #   select(Date = true_date, bsadf, all_of(target))
 
+# xdata_income_seq4 <-
+#   augment(radf_income4) %>%
+#   select(key, id, bsadf) %>%
+#   spread(id, bsadf) %>%
+#   right_join(idx,  by = "key") %>%
+#   bind_cols(cv_seq) %>%
+#   arrange(key) %>%
+#   select(Date = true_date, bsadf, all_of(target))
 
-xdata_income_seq1 <- augment_join(radf_income1, cv) %>% 
-  filter(stat == "bsadf", sig == 95) %>% 
-  full_join(idx, by = "index") %>% 
-  select(true_date, id, tstat, crit) %>% 
-  arrange(true_date) %>% 
-  pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target)) %>% 
+xdata_income_seq1 <- augment_join(radf_income1, cv) %>%
+  filter(stat == "bsadf", sig == 95) %>%
+  full_join(idx, by = "index") %>%
+  select(true_date, id, tstat, crit) %>%
+  arrange(true_date) %>%
+  pivot_wider(names_from = id, values_from = tstat) %>%
+  select(Date = true_date, crit, all_of(target)) %>%
   drop_na(Date)
-  
-xdata_income_seq4 <-augment_join(radf_income4, cv) %>% 
-  filter(stat == "bsadf", sig == 95) %>% 
-  full_join(idx, by = "index") %>% 
-  select(true_date, id, tstat, crit) %>% 
-  arrange(true_date) %>% 
-  pivot_wider(names_from = id, values_from = tstat) %>% 
-  select(Date = true_date, crit, all_of(target)) %>% 
+
+xdata_income_seq4 <- augment_join(radf_income4, cv) %>%
+  filter(stat == "bsadf", sig == 95) %>%
+  full_join(idx, by = "index") %>%
+  select(true_date, id, tstat, crit) %>%
+  arrange(true_date) %>%
+  pivot_wider(names_from = id, values_from = tstat) %>%
+  select(Date = true_date, crit, all_of(target)) %>%
   drop_na(Date)
 
 # start writing -----------------------------------------------------------
@@ -204,31 +227,37 @@ options("openxlsx.numFmt" = "0.00")
 
 # Sheet 2: LAG=1 ----------------------------------------------------------
 
-writeData(wb, sheet = 2, xdata_cv, startCol = "B", 
-          startRow = 5, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_price1, startCol = "B", 
-          startRow = 10, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income1, startCol = "D", 
-          startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_cv, startCol = "B", startRow = 5, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_price1, startCol = "B", startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_income1, startCol = "D", startRow = 10, colNames = FALSE)
 
-writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, 
-          keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 2, xdata_income_seq1, startCol = second_table_start, 
-          startRow = 4,  keepNA = TRUE, colNames = FALSE)
+writeData(wb, sheet = 2, xdata_price_seq1, startCol = "G", startRow = 4, keepNA = TRUE, colNames = FALSE)
+writeData(
+  wb,
+  sheet = 2,
+  xdata_income_seq1,
+  startCol = second_table_start,
+  startRow = 4,
+  keepNA = TRUE,
+  colNames = FALSE
+)
 
 # Sheet 2: LAG=4 ----------------------------------------------------------
 
-writeData(wb, sheet = 3, xdata_cv, startCol = "B", 
-          startRow = 5, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_price4, startCol = "B", 
-          startRow = 10, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_income4, startCol = "D", 
-          startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_cv, startCol = "B", startRow = 5, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_price4, startCol = "B", startRow = 10, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_income4, startCol = "D", startRow = 10, colNames = FALSE)
 
-writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, 
-          keepNA = TRUE, colNames = FALSE)
-writeData(wb, sheet = 3, xdata_income_seq4, startCol = second_table_start, 
-          startRow = 4,  keepNA = TRUE, colNames = FALSE)
+writeData(wb, sheet = 3, xdata_price_seq4, startCol = "G", startRow = 4, keepNA = TRUE, colNames = FALSE)
+writeData(
+  wb,
+  sheet = 3,
+  xdata_income_seq4,
+  startCol = second_table_start,
+  startRow = 4,
+  keepNA = TRUE,
+  colNames = FALSE
+)
 
 # Save Final Output -------------------------------------------------------
 
@@ -243,5 +272,3 @@ source("functions.R")
 new_version <- paste0("hpta", vers)
 
 compare(v1 = old_version, v2 = new_version)
-
-

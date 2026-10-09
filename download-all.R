@@ -4,15 +4,15 @@ source("create-excel-fun.R")
 #   download_version(ver)
 # }
 
-vers = "1102"
-tmplt_xlsx = "hp1102-1104.xlsx"
+vers <- "1102"
+tmplt_xlsx <- "hp1102-1104.xlsx"
 
 download_version("1102", "hp1102-1104.xlsx")
 download_version("1103", "hp1102-1104.xlsx")
 download_version("1104", "hp1102-1104.xlsx")
 
-vers = "1302"
-tmplt_xlsx = "hpta/hpta1302.xlsx"
+vers <- "1302"
+tmplt_xlsx <- "hpta/hpta1302.xlsx"
 download_version("1302", "hpta/hpta1302.xlsx")
 download_version("1303", "hpta/hpta1302.xlsx")
 download_version("1304", "hpta/hpta1304.xlsx")
@@ -47,8 +47,8 @@ download_version("1902", "hpta/hpta1902.xlsx")
 download_version("1903", "hpta/hpta1903.xlsx")
 download_version("1904", "hpta/hpta1904.xlsx")
 
-vers = "2001"
-tmplt_xlsx = "full_post2001.xlsx"
+vers <- "2001"
+tmplt_xlsx <- "full_post2001.xlsx"
 
 download_version("2001", "full_post2001.xlsx")
 download_version("2002", "full_post2002.xlsx")
